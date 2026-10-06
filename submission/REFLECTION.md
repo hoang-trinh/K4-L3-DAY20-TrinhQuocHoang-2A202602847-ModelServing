@@ -6,10 +6,10 @@
 >
 > `make verify` sẽ fail nếu còn placeholder chưa điền. Đó là cố ý.
 
-**Họ Tên:** _<Họ Tên>_
-**MSSV:** _<MSSV>_
-**Cohort:** _<A20-K1 / A20-K2 / ...>_
-**Ngày submit:** _<YYYY-MM-DD>_
+**Họ Tên:** Trịnh Quốc Hoàng
+**MSSV:** 2A202602847
+**Cohort:** K4
+**Ngày submit:** 2026-10-06
 
 ---
 
@@ -17,23 +17,20 @@
 
 > Từ `make probe`. Paste output hoặc điền tay.
 
-- **OS:** _<macOS 14 / Windows 11 / Ubuntu 24.04 / ...>_
-- **CPU:** _<Apple M2 / Intel i7-12700H / AMD Ryzen 7 5800H>_
-- **Cores:** _<physical / logical>_
-- **CPU extensions:** _<AVX2 / AVX-512 / NEON / —>_
-- **RAM:** _<GB>_
-- **Accelerator:** _<NVIDIA RTX 4060 / Apple Metal / Vulkan / CPU only>_
-- **llama.cpp asset đã tải:** _<vd: llama-b10488-bin-macos-arm64.tar.gz>_
-- **Model đã dùng:** _<Gemma 4 E2B / Qwen3.5 0.8B>_ (`LAB_MODEL=`_<gemma4-e2b / qwen35-0.8b>_)
-- **Quantization:** _<primary>_ + _<compare>_ (từ `models/active.json`)
+- **OS:** Windows 10 (AMD64)
+- **CPU:** AMD Ryzen 7 6800HS Creator Edition
+- **Cores:** 8 physical / 16 logical
+- **CPU extensions:** AVX2
+- **RAM:** 13.7 GB
+- **Accelerator:** Vulkan
+- **llama.cpp asset đã tải:** llama-b10488-bin-win-vulkan-x64.zip
+- **Model đã dùng:** Qwen3.5 0.8B (`LAB_MODEL=qwen35-0.8b`)
+- **Quantization:** Q4_K_M + UD-Q2_K_XL (từ `models/active.json`)
 
-**Chạy ở đâu:** _<laptop của tôi / Colab / Kaggle>_
+**Chạy ở đâu:** laptop của tôi
 _(Nếu dùng cloud fallback: nói rõ vì sao — RAM < 8 GB, setup fail, v.v. Không mất điểm.)_
 
-**Setup story** (≤ 80 chữ): điều gì cần thay đổi để lab chạy trên máy bạn? Có bước
-nào fail rồi phải workaround không?
-
-_Answer here._
+**Setup story** (≤ 80 chữ): Trên Windows PowerShell 5.1, lab.ps1 gặp lỗi parse do ký tự em-dash không có BOM, và detect-hardware.py gặp UnicodeEncodeError trên console CP1252. Tôi đã sửa em-dash thành ASCII và cấu hình UTF-8 cho Python stdout.
 
 ---
 
@@ -43,14 +40,10 @@ _Answer here._
 
 | Quantization | Size (GB) | Load (ms) | TTFT P50/P95 (ms) | TPOT P50/P95 (ms) | E2E P50/P95/P99 (ms) | Decode (tok/s) |
 |---|--:|--:|--:|--:|--:|--:|
-| UD-Q4_K_XL | | | | | | |
-| UD-Q2_K_XL | | | | | | |
+| Q4_K_M | 0.50 | 10358 | 2271 / 2407 | 21.9 / 22.3 | 3618 / 3811 / 3811 | 45.7 |
+| UD-Q2_K_XL | 0.39 | 8189 | 2263 / 2367 | 21.7 / 22.1 | 3647 / 3742 / 3742 | 46.0 |
 
-**Quan sát** (≤ 60 chữ): 2-bit nhanh hơn bao nhiêu, và **có đáng không**? Bạn đã thử
-hỏi cùng một câu trên cả hai (`make serve` vs `.venv/bin/python labs/02-serve/serve.py --compare`)
-chưa? Chất lượng khác nhau thế nào?
-
-_Answer here._
+**Quan sát** (≤ 60 chữ): 2-bit chỉ nhanh hơn 0.3 tok/s (<1%) và nhỏ hơn 0.11 GB, không đáng đổi. Thử cùng câu hỏi trên serve, bản 4-bit trả lời chuẩn 57 token (2s), còn bản 2-bit mất stop token nên lặp 488 token đụng trần context (10s).
 
 ---
 
@@ -60,22 +53,16 @@ _Answer here._
 
 | Users | RPS | P50 (ms) | P95 (ms) | P99 (ms) | Eff. concurrency | Failures |
 |--:|--:|--:|--:|--:|--:|--:|
-| 10 | | | | | | |
-| 50 | | | | | | |
+| 10 | 0.63 | 13000 | 21000 | 22000 | 8.5 | 0.0% |
+| 50 | 0.74 | 35000 | 55000 | 56000 | 23.0 | 0.0% |
 
-- **Offered load tăng 5×, throughput thực tăng:** _<X.XX>×_
-- **P95 tăng:** _<X.XX>×_
-- **Effective concurrency ở 50 users:** _<số>_ so với `--parallel` = _<số>_ slots
+- **Offered load tăng 5×, throughput thực tăng:** 1.17×
+- **P95 tăng:** 2.62×
+- **Effective concurrency ở 50 users:** 23.0 so với `--parallel` = 4 slots
 
-**Peak `llamacpp:n_busy_slots_per_decode`** (từ `make metrics` khi `make load-50` đang
-chạy): _<số>_ / _<slots>_ slots
+**Peak `llamacpp:n_busy_slots_per_decode`** (từ `make metrics` khi `make load-50` đang chạy): 3.80 / 4 slots
 
-**Saturation reading** (≤ 80 chữ): server của bạn bão hoà ở đâu, và **bằng chứng nào**
-thuyết phục bạn? Nếu P95 tăng nhanh hơn RPS thì phần latency thêm đó là queue time hay
-compute time — bạn biết bằng cách nào? Nếu bạn phải nâng goodput@SLO, bạn sẽ đổi knob
-nào **trước**, và vì sao knob đó?
-
-_Answer here._
+**Saturation reading** (≤ 80 chữ): Server bão hoà sâu ở 50 user: RPS chỉ tăng 1.17× (0.63 lên 0.74), P95 tăng 2.62× (21s lên 55s). Độ trễ tăng thêm là queue time vì effective concurrency (23.0) vượt xa 4 slot và requests_deferred = 46. Để nâng goodput tại SLO P95 ≤ 25s, tôi sẽ dùng Admission Control cắt queue quá hạn và tăng --parallel lên 6-8 slot.
 
 ---
 
@@ -85,23 +72,20 @@ _Answer here._
 
 | Day | Piece | Real hay stub? |
 |---|---|---|
-| N16 Cloud/IaC | | |
-| N17 Data pipeline | | |
-| N18 Lakehouse | | |
-| N19 Vector + features | | |
+| N16 Cloud/IaC | local Windows | stub |
+| N17 Data pipeline | sample corpus | stub |
+| N18 Lakehouse | in-memory list | stub |
+| N19 Vector + features | keyword overlap | stub |
 | N20 Serving | `llama-server` | real |
 
 **Latency split** (mean của 3 query, từ output của `pipeline.py`):
 
-- embed: _<ms>_
-- retrieve: _<ms>_
-- llm: _<ms>_
-- **stage chiếm nhiều nhất:** _<stage>_ (_<%>_ của total)
+- embed: 0.0 ms
+- retrieve: 0.1 ms
+- llm: 5976.5 ms
+- **stage chiếm nhiều nhất:** llm (100% của total)
 
-**Reflection** (≤ 60 chữ): bottleneck ở đâu? Có khớp với kỳ vọng của bạn không? Nếu
-phải giảm latency của pipeline này 2×, bạn sẽ tấn công vào đâu?
-
-_Answer here._
+**Reflection** (≤ 60 chữ): Bottleneck là llm (100% latency), đúng kỳ vọng vì autoregressive decode bị nghẽn băng thông nhớ. Để giảm latency 2×, tôi sẽ tấn công vào stage LLM bằng Speculative Decoding, hạ max_tokens hoặc dùng Prefix/KV Caching. Tối ưu retrieval không có tác dụng theo luật Amdahl.
 
 ---
 
@@ -111,22 +95,19 @@ _Answer here._
 > một before/after thật (`benchmarks/01-tuning-tg128.md`). Đổi quantization,
 > `LAB_N_CTX`, hay `--parallel` rồi đo lại cũng được.
 
-**Change:** _<vd: hạ -t từ 16 xuống 8; vd: đổi sang UD-Q2_K_XL; vd: --parallel 4 → 8>_
+**Change:** Tối ưu số thread decode -t từ 1 lên 8 (đúng số physical core của CPU AMD Ryzen 7 6800HS)
 
 ```
-before:  <số + đơn vị>
-after:   <số + đơn vị>
-speedup: <X.Y>×
+before:  45.9 tok/s
+after:   51.9 tok/s
+speedup: 1.13×
 ```
 
 **Tại sao nó work** (1–2 đoạn — đây là phần grader đọc kỹ nhất):
 
-_Giải thích như đang nói với bạn ngồi cạnh. Bám vào **cơ chế**, không phải "vibes":
-memory bandwidth? vector width? cache residency? scheduling? queueing? Nếu kết quả
-**khác** với kỳ vọng từ deck — nói rõ, và giải thích vì sao. Grader thưởng điểm cho
-lập luận đúng về một kết quả bất ngờ, hơn là một con số đẹp không được giải thích._
+Quá trình sinh token (tg128) bị giới hạn chủ yếu bởi băng thông bộ nhớ (memory bandwidth) do mỗi bước decode phải nạp lại toàn bộ trọng số mô hình từ RAM. Việc tăng từ 1 lên 8 thread tận dụng tối đa 8 core vật lý độc lập có pipeline và cache L1/L2 riêng để tính toán song song ma trận và dequantization, mang lại speedup 1.13x trước khi bão hòa kênh DDR5.
 
-_Answer here._
+Vượt qua 8 thread (16 thread logical qua SMT hoặc 32 thread oversubscription), hiệu năng bị tụt ngược (từ 51.9 xuống 46.9 và 45.5 tok/s). Cơ chế là SMT chia sẻ chung ALU/cache của cùng core vật lý mà không tăng thêm băng thông bộ nhớ, dẫn đến cache thrashing và overhead chuyển ngữ cảnh (context switching) của hệ điều hành.
 
 ---
 
